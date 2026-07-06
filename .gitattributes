@@ -1,0 +1,4 @@
+*.txt filter=lfs diff=lfs merge=lfs -text
+AirlineReviews.txt filter=lfs diff=lfs merge=lfs -text
+*.ipynb filter=lfs diff=lfs merge=lfs -text
+*.xlsb filter=lfs diff=lfs merge=lfs -text

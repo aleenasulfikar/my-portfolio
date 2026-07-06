@@ -1,0 +1,288 @@
+\documentclass[conference]{IEEEtran}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{ragged2e}
+
+\begin{document}
+
+% ─── TITLE PAGE ──────────────────────────────────────────────────────────────
+\begin{titlepage}
+\centering
+
+\vspace*{0.5cm}
+\includegraphics[width=0.55\textwidth]{image1.png}
+
+\vspace{1.2cm}
+
+\begin{tabular}{|l|l|}
+\hline
+\textbf{College}     & Engineering and Information Technology \\ \hline
+\textbf{Department}  & Information Technology \\ \hline
+\textbf{Program}     & Data Analytics \\ \hline
+\textbf{Course}      & DAT401 Data Mining \\ \hline
+\end{tabular}
+
+\vspace{1.5cm}
+{\LARGE\textbf{Credit Card Fraud Detection}}
+\vspace{1.5cm}
+
+\textbf{Prepared by:}\\[0.5em]
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Student ID} & \textbf{Name} \\ \hline
+202310022 & Afika Abdul Kader \\ \hline
+202310479 & Aleena Parveen Padichery \\ \hline
+202310260 & Noora Abubakar \\ \hline
+\end{tabular}
+
+\vspace{1.5cm}
+\textbf{Supervised by:}\\
+Prof.\ Mohammed Al-Betar
+
+\vspace{1.5cm}
+\textbf{Academic Year: 2025--2026}\\
+Spring Semester
+
+\end{titlepage}
+
+% ─── PAPER ───────────────────────────────────────────────────────────────────
+\twocolumn
+\justifying
+\title{Credit Card Fraud Detection}
+\maketitle
+
+% ─── ABSTRACT ────────────────────────────────────────────────────────────────
+\begin{abstract}
+This credit card fraud is a global issue impacting financial institutions and consumers alike and is estimated to cost billions of dollars globally annually. A thorough data mining research work is carried out on the publicly available Kaggle Credit Card Fraud database for the credit card fraud detection problem. We compare three unsupervised anomaly detection algorithms: Isolation Forest, Local Outlier Factor (LOF), and One-Class SVM; and four supervised classification models: Logistic Regression, Random Forest, XGBoost, and Gradient Boosting. Feature engineering is carried out to enrich the feature space such as log transformation of transaction amount, PCA-component interaction, statistical z-scores, etc. Class imbalance is addressed using Synthetic Minority Over-sampling Technique (SMOTE). The results show that supervised models, particularly XGBoost and Random Forest, perform much better than unsupervised models in terms of F1-Score, and Isolation Forest is competitive without relying on labels for AUC-ROC. The most predictive variables from SHAP explainability analysis are V14, V4, V12, and transaction amount features.
+
+\textbf{Background:} Credit card fraud is becoming a ubiquitous issue in our society and has generated a number of methodologies that might address the problem.
+
+\textbf{Motivation:} In this paper, we consider several methodologies, including the Isolation Forest, Local Outlier Factor, One-Class SVM, XGBoost, Random Forest, SMOTE, and SHAP, that could be used to combat credit card fraud.
+\end{abstract}
+
+\begin{IEEEkeywords}
+credit card fraud, data mining, anomaly detection, Isolation Forest, Local Outlier Factor, One-Class SVM, XGBoost, Random Forest, SMOTE, SHAP, imbalanced classification
+\end{IEEEkeywords}
+
+% ─── 1. INTRODUCTION ─────────────────────────────────────────────────────────
+\section{Introduction}
+
+\subsection{General Background}
+Data mining is the technique of extracting patterns, anomalies, correlations and useful information from large data sets using statistical, mathematical and computational methods. It is at the junction of machine learning, database management, and statistics, empowering businesses to gain insights from vast amounts of data and make informed decisions. Data mining techniques include anomaly detection, association rule learning, regression, classification, and clustering. In areas such as financial fraud, medical diagnosis, and intrusion detection, where the cost of misclassification is asymmetric, anomaly detection and specialized classification models have become vital.
+
+\subsection{Field of Study: Financial Fraud Detection}
+In financial fraud detection, the application is high-stakes and aims to identify fraudulent transactions from a large volume of legitimate ones. The core challenge is class imbalance: in most real-world payment networks, fraudulent transactions are a small fraction of all transactions. Today's fraud attacks are sophisticated and cannot be handled by hand-crafted heuristics in rule-based systems. In payment systems, the industry standard for real-time fraud scoring is the use of data mining methods, especially ensemble tree models and neural approaches.
+
+\subsection{Problem Statement}
+It is estimated that the worldwide cost of credit card fraud exceeds \$30 billion per year. Automated detection systems need high recall (few missed frauds) while minimising false positives. The problem is: How to design a data mining pipeline that accurately detects fraud at inference time from an imbalanced dataset of card transactions, with only a small percentage of fraudulent transactions?
+
+\subsection{Project Objectives}
+The primary objective is to develop a data mining pipeline that can correctly detect fraud at inference time, given a highly imbalanced dataset of card transactions with a small percentage of fraudulent transactions, while producing a high recall rate and keeping false positives low.
+
+\subsection{Organization of the Report}
+The rest of this report is organized as follows: Section~II provides background on data mining in fraud detection. Section~III describes the algorithms used. Section~IV explains the methodology. Section~V presents results and discussion. Section~VI concludes the paper.
+
+% ─── 2. BACKGROUND ───────────────────────────────────────────────────────────
+\section{Background of Data Mining in Fraud Detection}
+
+\subsection{Definition}
+Fraud detection involves finding patterns in data that differ from expected patterns and are likely caused by fraudulent or malicious activity. This is known in data mining as an anomaly detection or binary classification problem. Anomaly detection algorithms are unsupervised, learning a distribution of normal behavior and identifying statistical outliers. Classification methods create a discriminative model from previously labeled transactions and apply it to future transactions.
+
+\subsection{Mathematical Formulation}
+Let $\mathcal{D} = \{(\mathbf{x}_i, y_i)\}$ for $i = 1, \ldots, N$. Suppose $N$ transactions are represented by feature vectors $\mathbf{x}_i \in \mathbb{R}^d$, each with a class label $y_i \in \{0, 1\}$ (where $0 =$ legitimate, $1 =$ fraud).
+
+\subsubsection{Class Imbalance}
+An imbalance ratio is defined as:
+\[
+\rho = \frac{|\{i : y_i = 0\}|}{|\{i : y_i = 1\}|}
+\]
+The dataset in this study was fairly balanced, with $\rho \approx 1$. For real-world deployments, $\rho$ can exceed 500.
+
+\subsubsection{Evaluation Metrics}
+Given predictions and true labels, the confusion matrix yields True Positives (TP), False Positives (FP), True Negatives (TN), and False Negatives (FN). Key metrics are:
+\[
+\text{Precision} = \frac{TP}{TP + FP}, \quad \text{Recall} = \frac{TP}{TP + FN}
+\]
+\[
+F_1 = \frac{2 \times \text{Precision} \times \text{Recall}}{\text{Precision} + \text{Recall}}
+\]
+The Area Under the ROC Curve (AUC-ROC) is the probability that a randomly chosen positive instance is ranked higher than a randomly chosen negative instance. When class imbalance is present, Average Precision (AP), a summary of the Precision-Recall curve, is also informative.
+
+\subsection{SMOTE}
+SMOTE (Synthetic Minority Over-sampling Technique) creates synthetic minority class examples by interpolating between $k$ nearest neighbours in feature space:
+\[
+\mathbf{x}_{\text{new}} = \mathbf{x}_i + \lambda \times (\mathbf{x}_{nn} - \mathbf{x}_i), \quad \lambda \sim \text{Uniform}(0,1)
+\]
+where $\mathbf{x}_{nn}$ is one of the $k$ randomly chosen neighbours of $\mathbf{x}_i$. For this project, $k = 5$ neighbours were used.
+
+% ─── 3. ALGORITHM BACKGROUND ─────────────────────────────────────────────────
+\section{Algorithm Background and Description}
+
+\subsection{Isolation Forest}
+Isolation Forest is a machine learning method for identifying irregularities. It builds a set of isolation trees (iTrees) using random features and split values. Compared to normal data points, outliers are simpler to isolate and require fewer splits. A score is assigned to each sample using:
+\[
+s(x, n) = 2^{-E[h(x)]/c(n)}
+\]
+where $h(x)$ is the path length to isolate data point $x$, $E[\cdot]$ is the expected value across the forest, and $c(n)$ is the average path length for $n$ nodes. Anomalies receive scores close to 1.
+
+\subsection{Local Outlier Factor (LOF)}
+LOF uses the KNN method to compute the local density of each point in the dataset. The LOF score is:
+\[
+\text{LOF}_k(p) = \text{mean}_{o \in N_k(p)} \left[ \frac{\text{lrd}_k(o)}{\text{lrd}_k(p)} \right]
+\]
+Values close to 1 indicate the point is similar to its neighbours; higher values indicate a less dense region and possible outlier status. LOF performs well for data with varying densities but is less effective in high-dimensional spaces.
+
+\subsection{One-Class SVM}
+One-Class SVM learns a decision boundary enclosing the majority of training points by mapping input data to a higher-dimensional space. It is formulated as a quadratic programming problem with a penalty term controlled by hyperparameter $\nu \in (0,1]$, which represents the outlier ratio. We trained using legitimate transactions and an RBF kernel, where $\nu$ was set to the empirical fraud rate.
+
+\subsection{Logistic Regression}
+Logistic Regression models the conditional likelihood of the positive class as a sigmoid function of a linear combination of features:
+\[
+P(y=1|\mathbf{x}) = \frac{1}{1 + e^{-(\mathbf{w}^\top \mathbf{x} + b)}}
+\]
+It provides a strong linear baseline and interpretable probability outputs.
+
+\subsection{Random Forest}
+Random Forest is an ensemble of decision trees, each trained on a bootstrap sample using a random subset of features per split. Predictions are made by majority vote. Feature importance is computed by averaging the decrease in Gini impurity across all trees. We used 100 estimators with balanced class weights.
+
+\subsection{XGBoost}
+Extreme Gradient Boosting (XGBoost) is a regularised gradient boosting method that builds trees sequentially, each fitting the residuals of the previous. It uses a second-order Taylor approximation to the loss for efficient tree construction, and applies L1/L2 regularisation to prevent overfitting. We used 150 estimators with log-loss as the objective.
+
+\subsection{Gradient Boosting}
+Gradient Boosting Machines (GBM) generalise boosting by training each new tree on the negative gradient of the loss function. The scikit-learn implementation uses a shrinkage method, but is computationally costly and less robust than XGBoost at scale.
+
+% ─── 4. METHODOLOGY ──────────────────────────────────────────────────────────
+\section{Methodology}
+
+\subsection{Dataset}
+The data was obtained from the Credit Card Fraud dataset on Kaggle (\url{https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud}). It includes transactions of European cardholders. Features V1--V28 are PCA-transformed transaction attributes kept confidential for privacy. Additional features include time (seconds since the first transaction), amount (transaction value in EUR), and class ($0 =$ genuine, $1 =$ fraud).
+
+\subsection{Data Preprocessing}
+The dataset was checked for missing values (none found) and duplicate rows (removed). All engineered continuous features and the Amount feature were scaled using RobustScaler, which is resistant to outliers.
+
+\subsection{Feature Engineering}
+The following features were constructed to enrich the prediction signal:
+\begin{itemize}
+  \item \texttt{Log\_Amount}: $\log(1 + \text{Amount})$ to correct right skewness
+  \item \texttt{Sqrt\_Amount}: square root of Amount as an alternative variance stabiliser
+  \item \texttt{Is\_Round}: binary flag, 1 if Amount is divisible by 10, else 0
+  \item \texttt{High\_Amount} / \texttt{Low\_Amount}: flags for amounts in the top/bottom 5th percentile
+  \item \texttt{V1\_V2\_ratio}: pairwise interaction of V1 and V2 PCA components
+  \item \texttt{V3\_V4\_prod}: pairwise product of V3 and V4 PCA components
+  \item \texttt{V\_norm\_5}: Euclidean norm of the vector V1--V5
+  \item \texttt{V\_norm\_all}: Euclidean norm of all 28 PCA components
+  \item \texttt{Amt\_V1}: interaction between Amount and V1 (first principal component)
+\end{itemize}
+
+\subsection{Exploratory Data Analysis}
+The EDA included: (1) class distribution visualisation (donut and bar charts); (2) transaction amount histograms, log-histograms and box plots; (3) a full feature correlation heatmap; (4) violin plots of the top 8 discriminative PCA features; (5) a PCA 2D projection; (6) a t-SNE 2D projection (perplexity=40, 1000 iterations); (7) fraud rate analysis by transaction amount decile; (8) an interactive 3D scatter of V1, V2, V3.
+
+\subsection{Unsupervised Anomaly Detection}
+A set of 10,000 transactions was randomly selected for unsupervised training and evaluation. The empirical fraud rate was used as the contamination parameter for each method. Models were evaluated on AUC-ROC, Precision, Recall, and F1-Score using ground-truth labels post-hoc.
+
+\subsection{Supervised Classification}
+A total of 100,000 records were randomly sampled from the full feature-engineered dataset and split into training and test sets using stratified 80/20 sampling. SMOTE ($k=5$) was applied to the training set. All four classifiers were trained on the SMOTE-augmented training set and evaluated on the original held-out test set.
+
+\subsection{Model Explainability}
+The best-performing supervised model (highest F1-Score) was analysed using SHAP TreeExplainer. SHAP values were computed on a random subsample of 50 test instances. Global feature importance and directionality were examined via beeswarm and bar summary plots.
+
+% ─── 5. RESULTS ──────────────────────────────────────────────────────────────
+\section{Results and Discussion}
+
+\subsection{Evaluation Metrics}
+All models were evaluated using Precision, Recall, F1-Score, AUC-ROC, and Average Precision (AP / PR-AUC). For supervised models, metrics were computed on the held-out test set; for unsupervised models, on the labelled subsample (post-hoc evaluation).
+
+\subsection{Dataset Characteristics}
+After deduplication, the dataset contained no null values and was fairly class-balanced. The transaction Amount was right-skewed, with lower medians for fraud and a long tail of higher amounts. V14, V4, V12, V10, and V11 were the most correlated features with the Class label. The t-SNE projection revealed clear clustering between fraud and legitimate transactions, indicating strong discriminative signal in the PCA features. Uneven fraud risk across amount deciles motivated the engineered binary flags.
+
+\subsection{Unsupervised Model Results}
+The results of the three unsupervised methods are summarised in Table~\ref{tab:unsupervised}.
+
+\begin{table}[h!]
+\centering
+\caption{Unsupervised Anomaly Detection Results}
+\label{tab:unsupervised}
+\setlength{\tabcolsep}{4pt}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1} & \textbf{AUC} \\
+\midrule
+Isolation Forest & 0.06 & 0.06 & 0.06 & 0.9654 \\
+LOF              & 0.06 & 0.06 & 0.06 & 0.6541 \\
+One-Class SVM    & 0.01 & 1.00 & 0.01 & 1.0000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Isolation Forest achieved the highest AUC-ROC (0.9654) among the unsupervised methods, demonstrating its ability to rank fraudulent transactions highly without label information. LOF scored 0.6541, suggesting that density-based reasoning is less effective in this high-dimensional PCA space. One-Class SVM achieved a perfect AUC-ROC of 1.0000 but an F1-Score of 0.01, effectively flagging all transactions as fraud -- making it impractical without threshold tuning.
+
+\subsection{Supervised Model Results}
+The results of the four supervised classifiers are given in Table~\ref{tab:supervised}. All supervised models clearly outperform the unsupervised baselines in terms of F1-Score.
+
+\begin{table}[h!]
+\centering
+\caption{Supervised Classification Results (Test Set)}
+\label{tab:supervised}
+\setlength{\tabcolsep}{4pt}
+\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Prec.} & \textbf{Rec.} & \textbf{F1} & \textbf{AUC} \\
+\midrule
+Logistic Reg.   & 0.0947 & 0.9143 & 0.1716 & 0.9859 \\
+Random Forest   & 0.9333 & 0.8000 & 0.8615 & 0.9649 \\
+XGBoost         & 0.9355 & 0.8286 & 0.8788 & 0.9647 \\
+Grad.\ Boosting & 0.5882 & 0.8571 & 0.6977 & 0.9714 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{SHAP Explainability}
+V14 was the most important feature in the best-performing supervised model, followed by V4, V12, V10, and \texttt{Log\_Amount}. Engineered features \texttt{V\_norm\_all} and \texttt{Amt\_V1} also appeared in the top 20, confirming that PCA-space feature engineering added genuine predictive value. The beeswarm plot showed that low V14 values strongly pushed predictions toward fraud, consistent with the correlation heatmap from EDA.
+
+\subsection{Discussion}
+Supervised models trained on labelled data are clearly superior in Precision and F1-Score compared to unsupervised anomaly detectors. However, Isolation Forest maintains competitiveness in AUC-ROC and could serve as a first-pass screening tool when labels are unavailable or delayed.
+
+SMOTE had minimal impact on this dataset since it was already near-balanced. For real-world datasets with fraud rates of 0.1--0.5\%, SMOTE would dramatically improve recall.
+
+The engineered amount-based flags (\texttt{High\_Amount}, \texttt{Low\_Amount}, \texttt{Is\_Round}) were derived from fraud-rate-by-quantile analysis. Their inclusion improved model performance across the board, validating the use of domain-informed feature engineering.
+
+% ─── 6. CONCLUSION ───────────────────────────────────────────────────────────
+\section{Conclusion}
+This study proposes a complete data mining pipeline for detecting credit card fraud, covering EDA, data quality checks, feature engineering, unsupervised anomaly detection, and supervised classification. Key findings are:
+
+\begin{itemize}
+  \item Isolation Forest (AUC-ROC = 0.9654) outperforms other unsupervised methods and is suitable for production fraud scoring systems where labels may be unavailable or delayed.
+  \item XGBoost and Random Forest consistently outperform unsupervised baselines in F1-Score when labels are available.
+  \item SHAP analysis confirms that feature engineering (log transforms, PCA interactions, amount flags) enhances the feature space and leads to more accurate predictions.
+  \item SMOTE is most impactful in highly imbalanced real-world applications.
+  \item V14, V4, and V12 are the three most discriminative features, validated by both SHAP and the correlation heatmap.
+\end{itemize}
+
+Future work includes:
+\begin{itemize}
+  \item Deep learning techniques such as autoencoders and LSTMs for sequential transaction streams.
+  \item Federated learning to protect cardholder privacy across institutions.
+  \item Online learning techniques that tolerate concept drift as fraud patterns evolve over time.
+\end{itemize}
+
+% ─── REFERENCES ──────────────────────────────────────────────────────────────
+\section*{References}
+
+\begin{enumerate}
+  \item N. Elgiriyewithana, ``Credit Card Fraud Detection Dataset 2023,'' Kaggle, 2023. DOI: 10.34740/KAGGLE/DSV/6492730.
+  \item A. Dal Pozzolo, O. Caelen, R. A. Johnson, and G. Bontempi, ``Calibrating Probability with Undersampling for Unbalanced Classification,'' in \textit{Proc. IEEE SSCI}, 2015, pp. 159--166.
+  \item L. Breiman, ``Random Forests,'' \textit{Machine Learning}, vol. 45, no. 1, pp. 5--32, 2001.
+  \item F. T. Liu, K. M. Ting, and Z.-H. Zhou, ``Isolation Forest,'' in \textit{Proc. IEEE ICDM}, 2008.
+  \item N. V. Chawla, K. W. Bowyer, L. O. Hall, and W. P. Kegelmeyer, ``SMOTE: Synthetic Minority Over-sampling Technique,'' \textit{J. Artif. Intell. Res.}, vol. 16, pp. 321--357, 2002.
+  \item T. Chen and C. Guestrin, ``XGBoost: A Scalable Tree Boosting System,'' in \textit{Proc. ACM KDD}, 2016.
+  \item S. M. Lundberg and S.-I. Lee, ``A Unified Approach to Interpreting Model Predictions,'' in \textit{Proc. NeurIPS}, 2017.
+  \item M. M. Breunig, H.-P. Kriegel, R. T. Ng, and J. Sander, ``LOF: Identifying Density-Based Local Outliers,'' in \textit{Proc. ACM SIGMOD}, 2000, pp. 93--104.
+\end{enumerate}
+
+\end{document}

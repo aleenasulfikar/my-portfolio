@@ -1,0 +1,56 @@
+{
+  "type": "object",
+  "properties": {
+    "icao24": {
+      "type": "string"
+    },
+    "callsign": {
+      "type": "string"
+    },
+    "origin": {
+      "type": "string"
+    },
+    "destination": {
+      "type": "string"
+    },
+    "flight_date": {
+      "type": "string"
+    },
+    "firstseen_datetime": {
+      "type": "string"
+    },
+    "lastseen_datetime": {
+      "type": "string"
+    },
+    "duration_hours": {
+      "type": "number"
+    },
+    "delay_minutes": {
+      "type": "number"
+    },
+    "delay_status": {
+      "type": "string"
+    },
+    "flight_type": {
+      "type": "string"
+    },
+    "avg_speed_kmh": {
+      "type": "number"
+    },
+    "flight_month": {
+      "type": "string"
+    },
+    "day_of_week": {
+      "type": "string"
+    },
+    "timestamp": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "icao24",
+    "callsign",
+    "origin",
+    "destination"
+  ]
+}

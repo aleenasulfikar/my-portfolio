@@ -1,0 +1,271 @@
+version: "3.7"
+ 
+services:
+ 
+  # HADOOP MASTER (Namenode) 
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    restart: always
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+      - ./python_mapreduce:/app
+    environment:
+      - CLUSTER_NAME=uae_flight_project
+    env_file:
+      - ./hadoop.env
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.10
+ 
+  # HADOOP SLAVES (3 Datanodes) 
+  datanode1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode1
+    restart: always
+    volumes:
+      - hadoop_datanode1:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file: [./hadoop.env]
+    depends_on: [namenode]
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.11
+ 
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
+    restart: always
+    volumes:
+      - hadoop_datanode2:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file: [./hadoop.env]
+    depends_on: [namenode]
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.12
+ 
+  datanode3:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode3
+    restart: always
+    volumes:
+      - hadoop_datanode3:/hadoop/dfs/data
+    environment:
+      SERVICE_PRECONDITION: "namenode:9870"
+    env_file: [./hadoop.env]
+    depends_on: [namenode]
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.13
+ 
+  # YARN MASTER (Resource Manager) 
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870"
+    env_file:
+      - ./hadoop.env
+    ports:
+      - "8088:8088"
+    depends_on:
+      - namenode
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.14
+ 
+  # YARN NODE MANAGER (to run the MapReduce)
+  nodemanager:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager
+    restart: always
+    ports:
+      - "8042:8042"
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 datanode1:9864 resourcemanager:8088"
+    env_file:
+      - ./hadoop.env
+    depends_on:
+      - resourcemanager
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.18
+ 
+  # MAPREDUCE HISTORY SERVER 
+  historyserver:
+    image: bde2020/hadoop-historyserver:2.0.0-hadoop3.2.1-java8
+    container_name: historyserver
+    restart: always
+    environment:
+      SERVICE_PRECONDITION: "namenode:9000 namenode:9870 resourcemanager:8088 nodemanager:8042"
+    env_file:
+      - ./hadoop.env
+    volumes:
+      - hadoop_historyserver:/hadoop/yarn/timeline
+    ports:
+      - "19888:19888"
+    depends_on:
+      - nodemanager
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.17
+ 
+  # SPARK MASTER
+  spark-master:
+    image: apache/spark:3.5.0
+    container_name: spark-master
+    user: root
+    ports:
+      - "8081:8080"
+      - "7077:7077"
+    environment:
+      - SPARK_HOME=/opt/spark
+    volumes:
+      - ./spark-apps:/opt/spark/work-dir
+      - ./extra-jars:/opt/spark/extra-libs
+    command: >
+      /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master
+      --ip 172.20.0.2 --port 7077 --webui-port 8080
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.2
+ 
+  # SPARK WORKERS (3 Workers)
+  spark-worker-a:
+    image: apache/spark:3.5.0
+    container_name: spark-worker-a
+    user: root
+    depends_on: [spark-master]
+    environment:
+      - SPARK_MASTER=spark://172.20.0.2:7077
+    volumes:
+      - ./spark-apps:/opt/spark/work-dir
+      - ./extra-jars:/opt/spark/extra-libs
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://172.20.0.2:7077
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.3
+ 
+  spark-worker-b:
+    image: apache/spark:3.5.0
+    container_name: spark-worker-b
+    user: root
+    depends_on: [spark-master]
+    environment:
+      - SPARK_MASTER=spark://172.20.0.2:7077
+    volumes:
+      - ./spark-apps:/opt/spark/work-dir
+      - ./extra-jars:/opt/spark/extra-libs
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://172.20.0.2:7077
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.15
+ 
+  spark-worker-c:
+    image: apache/spark:3.5.0
+    container_name: spark-worker-c
+    user: root
+    depends_on: [spark-master]
+    environment:
+      - SPARK_MASTER=spark://172.20.0.2:7077
+    volumes:
+      - ./spark-apps:/opt/spark/work-dir
+      - ./extra-jars:/opt/spark/extra-libs
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://172.20.0.2:7077
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.16
+ 
+  # KAFKA STACK (Zookeeper + Kafka + Kafka UI)
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.4
+ 
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: kafka
+    depends_on: [zookeeper]
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.5
+ 
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.6
+ 
+  # MONITORING STACK (InfluxDB + Grafana) 
+  influxdb:
+    image: influxdb:2.7
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: adminpassword
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: supersecrettoken
+      DOCKER_INFLUXDB_INIT_ORG: uaeproject
+      DOCKER_INFLUXDB_INIT_BUCKET: flights
+    volumes: [influxdb_data:/var/lib/influxdb2]
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.7
+ 
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on: [influxdb]
+    volumes: [grafana_data:/var/lib/grafana]
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      uaepipeline:
+        ipv4_address: 172.20.0.8
+ 
+networks:
+  uaepipeline:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+ 
+volumes:
+  hadoop_namenode:
+  hadoop_datanode1:
+  hadoop_datanode2:
+  hadoop_datanode3:
+  hadoop_historyserver:
+  influxdb_data:
+  grafana_data:

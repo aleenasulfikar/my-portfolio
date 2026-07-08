@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "properties": {
+    "time": {
+      "type": "string"
+    },
+    "airport": {
+      "type": "string"
+    },
+    "temperature_2m": {
+      "type": "number"
+    },
+    "relative_humidity_2m": {
+      "type": "number"
+    },
+    "wind_speed_10m": {
+      "type": "number"
+    },
+    "wind_direction_10m": {
+      "type": "number"
+    },
+    "cloud_cover": {
+      "type": "number"
+    },
+    "pm10": {
+      "type": "number"
+    },
+    "pm2_5": {
+      "type": "number"
+    },
+    "temp_f": {
+      "type": "number"
+    },
+    "rh": {
+      "type": "number"
+    },
+    "visibility": {
+      "type": "number"
+    },
+    "timestamp": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "time",
+    "airport",
+    "temperature_2m"
+  ]
+}
